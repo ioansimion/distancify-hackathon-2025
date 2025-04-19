@@ -5,7 +5,6 @@ import numpy as np
 BASE_URL = "http://localhost:5000"
 TARGET_DISPATCHES = 10
 MAX_ACTIVE_CALLS = 3
-MAX_ACTIVE_CALLS += 1
 
 # Example endpoint
 # response = requests.get(f"{BASE_URL}/locations")
@@ -20,19 +19,19 @@ MAX_ACTIVE_CALLS += 1
 
 # START
 def start_scenario():
-    start_data = {
+    payload = {
         "seed": "default",
         "targetDispatches": TARGET_DISPATCHES,
-        "maxActiveCalls": MAX_ACTIVE_CALLS,
+        "maxActiveCalls": MAX_ACTIVE_CALLS - 1,
     }
-    response = requests.post(f"{BASE_URL}/control/reset", json=start_data)
-    return response
+    response = requests.post(f"{BASE_URL}/control/reset", params=payload)
+    return response.json()
 
 
 # STOP
 def stop_scenario():
     response = requests.post(f"{BASE_URL}/control/stop")
-    return response
+    return response.json()
 
 
 def scenario_status():
@@ -125,7 +124,7 @@ def euclidean(p1, p2):
 
 
 if __name__ == "__main__":
-    start_scenario()
+    print(start_scenario()["targetDispatches"], start_scenario()["maxActiveCalls"])
 
     locations = get_locations()
     num_locations = len(locations)
@@ -151,6 +150,6 @@ if __name__ == "__main__":
     print(calls_queue)
 
     calls_queue[0]
-    print(get_medical_by_city("Maramureș", "Baia Mare"))
+    print(distance_matrix["Maramureș", "Baia Mare"]["Maramureș", "Baia Sprie"])
 
-    stop_scenario()
+    print(stop_scenario())
