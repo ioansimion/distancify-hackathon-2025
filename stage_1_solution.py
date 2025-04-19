@@ -108,6 +108,18 @@ def dispatch(sourceCounty, sourceCity, targetCounty, targetCity, quantity):
     return response
 
 
+def get_locations_coords(locations):
+    locations_coords = {}
+    for location in locations:
+        county = location["county"]
+        city = location["name"]
+        lat = location["lat"]
+        long = location["long"]
+        locations_coords[(county, city)] = (lat, long)
+
+    return locations_coords
+
+
 def euclidean(p1, p2):
     return math.sqrt((p1["lat"] - p2["lat"]) ** 2 + (p1["long"] - p2["long"]) ** 2)
 
@@ -117,13 +129,17 @@ if __name__ == "__main__":
 
     locations = get_locations()
     num_locations = len(locations)
+    locations_coords = get_locations_coords(locations=locations)
 
-    distance_matrix = np.zeros((num_locations, num_locations), dtype=float)
-
-    for source_index in range(num_locations):
-        for target_index in range(num_locations):
-            distance = euclidean(locations[source_index], locations[target_index])
-            distance_matrix[source_index][target_index] = distance
+    # Create and calculate the distance matrix (dict)
+    distance_matrix = {}
+    for source in locations:
+        source_key = (source["county"], source["name"])
+        distance_matrix[source_key] = {}
+        for target in locations:
+            target_key = (target["county"], target["name"])
+            distance = euclidean(source, target)
+            distance_matrix[source_key][target_key] = distance
 
     calls_queue = get_calls_queue()
     num_calls = len(calls_queue)
