@@ -52,9 +52,12 @@ def get_calls_queue():
 
 
 # FILL
-def fill_queue():
+def fill_calls_queue():
+    queue = []
     for _ in range(MAX_ACTIVE_CALLS):
-        get_next_call()
+        queue.append(get_next_call())
+
+    return queue
 
 
 # LOCATIONS
@@ -124,7 +127,7 @@ def euclidean(p1, p2):
 
 
 if __name__ == "__main__":
-    print(start_scenario()["targetDispatches"], start_scenario()["maxActiveCalls"])
+    print(start_scenario()["targetDispatches"], start_scenario()["maxActiveCalls"] + 1)
 
     locations = get_locations()
     num_locations = len(locations)
@@ -141,15 +144,16 @@ if __name__ == "__main__":
             distance_matrix[source_key][target_key] = distance
 
     calls_queue = get_calls_queue()
+    print(calls_queue)
+    calls_queue = fill_calls_queue()
+    print(calls_queue)
+    calls_queue = get_calls_queue()
+    print(calls_queue)
     num_calls = len(calls_queue)
+
     medical_locations = get_medical_locations()
     num_medical_locations = len(medical_locations)
 
-    get_next_call()
-    calls_queue = get_calls_queue()
-    print(calls_queue)
-
-    calls_queue[0]
     print(distance_matrix["Maramureș", "Baia Mare"]["Maramureș", "Baia Sprie"])
 
     print(stop_scenario())
