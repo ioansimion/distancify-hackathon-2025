@@ -17,7 +17,7 @@ MAX_ACTIVE_CALLS = 3
 #     print(f"Error: {response.status_code}")
 
 
-# START
+# region Control
 def start_scenario():
     payload = {
         "seed": "default",
@@ -28,7 +28,6 @@ def start_scenario():
     return response.json()
 
 
-# STOP
 def stop_scenario():
     response = requests.post(f"{BASE_URL}/control/stop")
     return response.json()
@@ -39,25 +38,28 @@ def scenario_status():
     return response.json()
 
 
-# NEXT
+# endregion Control
+
+
+# region Calls
 def get_next_call():
     response = requests.get(f"{BASE_URL}/calls/next")
     return response.json()
 
 
-# QUEUE
 def get_calls_queue():
     response = requests.get(f"{BASE_URL}/calls/queue")
     return response.json()
 
 
-# FILL
-def fill_calls_queue():
-    queue = []
-    for _ in range(MAX_ACTIVE_CALLS):
+def fill_calls_queue(queue: list = []):
+    for _ in range(MAX_ACTIVE_CALLS - len(queue)):
         queue.append(get_next_call())
 
     return queue
+
+
+# endregion Calls
 
 
 # LOCATIONS
@@ -70,7 +72,7 @@ def get_locations():
     return locations
 
 
-# MEDICAL LOCATIONS
+# region Medical
 def get_medical_locations():
     response = requests.get(f"{BASE_URL}/medical/search")
     if not response.ok:
@@ -86,7 +88,6 @@ def get_medical_locations():
     return medical_locations
 
 
-# MEDICAL BY CITY
 def get_medical_by_city(county, city):
     params = {"county": county, "city": city}
     response = requests.get(f"{BASE_URL}/medical/searchbycity", params=params)
@@ -97,7 +98,6 @@ def get_medical_by_city(county, city):
     return data
 
 
-# DISPATCH
 def dispatch(sourceCounty, sourceCity, targetCounty, targetCity, quantity):
     payload = {
         "sourceCounty": sourceCounty,
@@ -108,6 +108,9 @@ def dispatch(sourceCounty, sourceCity, targetCounty, targetCity, quantity):
     }
     response = requests.post(f"{BASE_URL}/medical/dispatch", json=payload)
     return response
+
+
+# endregion Medical
 
 
 def get_locations_coords(locations):
@@ -127,7 +130,7 @@ def euclidean(p1, p2):
 
 
 if __name__ == "__main__":
-    print(start_scenario()["targetDispatches"], start_scenario()["maxActiveCalls"] + 1)
+    start_response = start_scenario()
 
     locations = get_locations()
     num_locations = len(locations)
@@ -143,8 +146,7 @@ if __name__ == "__main__":
             distance = euclidean(source, target)
             distance_matrix[source_key][target_key] = distance
 
-    calls_queue = get_calls_queue()
-    print(calls_queue)
+    calls_queue = []
     calls_queue = fill_calls_queue()
     print(calls_queue)
     calls_queue = get_calls_queue()
@@ -156,4 +158,15 @@ if __name__ == "__main__":
 
     print(distance_matrix["Maramureș", "Baia Mare"]["Maramureș", "Baia Sprie"])
 
-    print(stop_scenario())
+    stop_response = stop_scenario()
+    print(
+        stop_response["runningTime"],
+        "  ",
+        stop_response["requestCount"],
+        "or",
+        stop_response["httpRequests"],
+        "  ",
+        stop_response["penalty"],
+        stop_response["errors"]["missed"],
+        stop_response["errors"]["overDispatched"],
+    )
