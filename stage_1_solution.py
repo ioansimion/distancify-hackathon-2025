@@ -3,6 +3,7 @@ import math
 import numpy as np
 
 BASE_URL = "http://localhost:5000"
+SEED = "default"
 TARGET_DISPATCHES = 10
 MAX_ACTIVE_CALLS = 3
 
@@ -20,7 +21,7 @@ MAX_ACTIVE_CALLS = 3
 # region Control
 def start_scenario():
     payload = {
-        "seed": "default",
+        "seed": SEED,
         "targetDispatches": TARGET_DISPATCHES,
         "maxActiveCalls": MAX_ACTIVE_CALLS - 1,
     }
@@ -52,9 +53,22 @@ def get_calls_queue():
     return response.json()
 
 
-def fill_calls_queue(queue: list = []):
-    for _ in range(MAX_ACTIVE_CALLS - len(queue)):
-        queue.append(get_next_call())
+def fill_calls_queue(queue: list = None):
+    """
+    Fills the call queue until reaching MAX_ACTIVE_CALLS or emergencies(TARGET_DISPATCHES) are exhausted
+    """
+    if queue is None:
+        queue = []
+
+    active_calls = len(queue)
+    current_target = sum(call["requests"][0]["Quantity"] for call in queue)
+
+    while (active_calls < MAX_ACTIVE_CALLS) and (current_target < TARGET_DISPATCHES):
+        call = get_next_call()
+        queue.append(call)
+
+        active_calls += 1
+        current_target += call["requests"][0]["Quantity"]
 
     return queue
 
@@ -147,7 +161,11 @@ if __name__ == "__main__":
             distance_matrix[source_key][target_key] = distance
 
     calls_queue = []
-    calls_queue = fill_calls_queue()
+    calls_queue = fill_calls_queue(calls_queue)
+    print(calls_queue)
+    calls_queue = fill_calls_queue(calls_queue)
+    print(calls_queue)
+    calls_queue = fill_calls_queue(calls_queue)
     print(calls_queue)
     calls_queue = get_calls_queue()
     print(calls_queue)
