@@ -1,21 +1,10 @@
 import requests
 import math
-import numpy as np
 
 BASE_URL = "http://localhost:5000"
 SEED = "default"
 TARGET_DISPATCHES = 10
 MAX_ACTIVE_CALLS = 3
-
-# Example endpoint
-# response = requests.get(f"{BASE_URL}/locations")
-
-# # Check if it worked
-# if response.status_code == 200:
-#     data = response.json()  # Convert JSON to Python dictionary/list
-#     print(data[0]["lat"], data[0]["long"])
-# else:
-#     print(f"Error: {response.status_code}")
 
 
 # region Control
@@ -45,7 +34,10 @@ def scenario_status():
 # region Calls
 def get_next_call():
     response = requests.get(f"{BASE_URL}/calls/next")
-    return response.json()
+    if response.ok:
+        return response.json()
+    else:
+        return None
 
 
 def get_calls_queue():
@@ -65,6 +57,9 @@ def fill_calls_queue(queue: list = None):
 
     while (active_calls < MAX_ACTIVE_CALLS) and (current_target < TARGET_DISPATCHES):
         call = get_next_call()
+        if call is None:
+            break
+
         queue.append(call)
 
         active_calls += 1
@@ -76,7 +71,7 @@ def fill_calls_queue(queue: list = None):
 # endregion Calls
 
 
-# LOCATIONS
+# region Locations
 def get_locations():
     response = requests.get(f"{BASE_URL}/locations")
     if not response.ok:
@@ -84,6 +79,9 @@ def get_locations():
 
     locations = response.json()
     return locations
+
+
+# endregion Locations
 
 
 # region Medical
@@ -127,6 +125,7 @@ def dispatch(sourceCounty, sourceCity, targetCounty, targetCity, quantity):
 # endregion Medical
 
 
+# region Utils
 def get_locations_coords(locations):
     locations_coords = {}
     for location in locations:
@@ -141,6 +140,9 @@ def get_locations_coords(locations):
 
 def euclidean(p1, p2):
     return math.sqrt((p1["lat"] - p2["lat"]) ** 2 + (p1["long"] - p2["long"]) ** 2)
+
+
+# endregion Utils
 
 
 if __name__ == "__main__":
@@ -163,18 +165,23 @@ if __name__ == "__main__":
     calls_queue = []
     calls_queue = fill_calls_queue(calls_queue)
     print(calls_queue)
-    calls_queue = fill_calls_queue(calls_queue)
-    print(calls_queue)
-    calls_queue = fill_calls_queue(calls_queue)
-    print(calls_queue)
+    for call in calls_queue:
+        dispatch(
+            sourceCounty="Maramureș",
+            sourceCity="Baia Mare",
+            targetCounty=call["county"],
+            targetCity=call["city"],
+            quantity=call["requests"][0]["Quantity"],
+        )
     calls_queue = get_calls_queue()
+    print(calls_queue)
+    calls_queue = fill_calls_queue(calls_queue)
+    calls_queue = fill_calls_queue(calls_queue)
     print(calls_queue)
     num_calls = len(calls_queue)
 
     medical_locations = get_medical_locations()
     num_medical_locations = len(medical_locations)
-
-    print(distance_matrix["Maramureș", "Baia Mare"]["Maramureș", "Baia Sprie"])
 
     stop_response = stop_scenario()
     print(
